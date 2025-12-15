@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost & Found Hub - Authentication</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom CSS to define the color palette and animations */
+        :root {
+            --primary: #0066ff;
+            --primary-dark: #0052cc;
+            --ocean: #0284c7;
+            --accent: #0ea5e9;
+        }
+
+        /* Basic setup for the body and font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom gradient for a consistent look with a gentle animation */
+        .bg-gradient-custom {
+            background-image: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            background-size: 200% 200%;
+            animation: gradient-shift 15s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Custom shine effect for buttons */
+        .btn-shine {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .btn-shine::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-shine:hover::before {
+            left: 100%;
+        }
+
+        /* Replicate the custom pulse glow animation from the original CSS */
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(0, 102, 255, 0.5);
+                opacity: 0.7;
+            }
+            50% {
+                box-shadow: 0 0 20px 5px rgba(0, 102, 255, 0.8);
+                opacity: 1;
+            }
+        }
+        .animate-pulse-glow {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        /* Custom text gradient for headings */
+        .text-gradient {
+            background-image: linear-gradient(135deg, var(--primary), var(--ocean), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Custom styling for active tab button */
+        .tab-btn.active {
+            box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            color: white;
+        }
+        
+        /* Message box styling */
+        .message-box {
+            display: none;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        /* Hide specific elements initially */
+        .hidden {
+            display: none;
+        }
+
+        /* New animations for a more polished look */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-in forwards;
+        }
+
+    </style>
+</head>
+<body class="bg-gradient-custom min-h-screen flex items-center justify-center p-4 text-slate-800">
+
+    <div class="w-full max-w-6xl bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl overflow-hidden fade-in-up">
+        <div class="flex flex-col md:flex-row">
+
+            <div class="md:w-1/2 p-8 md:p-12 bg-white/50 flex flex-col justify-center text-center">
+                <div class="mb-6">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-600 to-sky-400 flex items-center justify-center mx-auto shadow-xl animate-pulse-glow">
+                        <i class="fas fa-search-location text-white text-4xl"></i>
+                    </div>
+                </div>
+                <h1 class="text-4xl font-extrabold mb-4 text-gradient fade-in">Lost & Found Hub</h1>
+                <p class="text-slate-500 mb-8 fade-in" style="animation-delay: 0.2s;">
+                    Your community hub for reuniting lost items with their owners.
+                </p>
+                <div id="stats" class="bg-white/50 backdrop-blur-md rounded-2xl p-6 shadow-lg fade-in" style="animation-delay: 0.4s;">
+                    <div class="text-3xl font-bold text-gradient mb-2">...</div>
+                    <div class="text-slate-600">Loading community stats</div>
+                </div>
+                <canvas id="myCanvas" width="500" height="300" class="hidden mt-8"></canvas>
+            </div>
+
+            <div class="md:w-1/2 p-8 md:p-12">
+                <div class="flex bg-slate-100 rounded-2xl p-1 mb-8 shadow-inner">
+                    <button id="show-login" class="tab-btn flex-1 p-3 rounded-xl font-semibold transition-all bg-gradient-to-br from-blue-600 to-sky-400 active">Sign In</button>
+                    <button id="show-register" class="tab-btn flex-1 p-3 rounded-xl font-semibold text-slate-500 hover:text-slate-800 transition-all">Register</button>
+                </div>
+
+                <div id="login-form">
+                    <h2 class="text-2xl font-bold mb-6 text-slate-800">Welcome Back 👋</h2>
+                    <div id="login-message" class="message-box"></div>
+                    <form id="login-form-content" class="space-y-5">
+                        <input type="email" id="login-email" placeholder="Email" required class="w-full p-4 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <input type="password" id="login-password" placeholder="Password" required class="w-full p-4 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <button type="submit" class="btn-shine w-full p-4 rounded-xl font-bold text-white bg-gradient-to-br from-blue-600 to-sky-400 hover:shadow-xl hover:scale-[1.01] hover:translate-y-[-2px] transition-all">Sign In</button>
+                    </form>
+                </div>
+
+                <div id="register-form" class="hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-slate-800">Create Account 🚀</h2>
+                    <div id="register-message" class="message-box"></div>
+                    <form id="register-form-content" class="space-y-5">
+                        <input type="email" id="register-email" placeholder="Email" required class="w-full p-4 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <input type="password" id="register-password" placeholder="Password" required class="w-full p-4 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <select id="register-role" required class="w-full p-4 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-500">
+                            <option value="" disabled selected>Select role</option>
+                            <option value="student">🎓 Student</option>
+                            <option value="premium">⭐ Premium</option>
+                            <option value="admin">🛡️ Admin</option>
+                        </select>
+                        <button type="submit" class="btn-shine w-full p-4 rounded-xl font-bold text-white bg-gradient-to-br from-cyan-600 to-teal-500 hover:shadow-xl hover:scale-[1.01] hover:translate-y-[-2px] transition-all">Register</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Simulated Backend and UI Logic ---
+        
+        // This is a simulated 'user database'. In a real app, this would be on a secure backend server.
+        const users = JSON.parse(localStorage.getItem('simulated_users') || '{}');
+        
+        // UI elements
+        const loginForm = document.getElementById("login-form");
+        const registerForm = document.getElementById("register-form");
+        const showLogin = document.getElementById("show-login");
+        const showRegister = document.getElementById("show-register");
+
+        // Function to switch between login and register forms
+        function switchToLogin() {
+            registerForm.classList.add("hidden");
+            loginForm.classList.remove("hidden");
+            showLogin.classList.add("bg-gradient-to-br", "from-blue-600", "to-sky-400");
+            showLogin.classList.remove("text-slate-500", "hover:text-slate-800");
+            showRegister.classList.remove("bg-gradient-to-br", "from-cyan-600", "to-teal-500");
+            showRegister.classList.add("text-slate-500", "hover:text-slate-800");
+            document.querySelector("#show-register").classList.remove("active");
+            document.querySelector("#show-login").classList.add("active");
+        }
+
+        function switchToRegister() {
+            loginForm.classList.add("hidden");
+            registerForm.classList.remove("hidden");
+            showRegister.classList.add("bg-gradient-to-br", "from-cyan-600", "to-teal-500");
+            showRegister.classList.remove("text-slate-500", "hover:text-slate-800");
+            showLogin.classList.remove("bg-gradient-to-br", "from-blue-600", "to-sky-400");
+            showLogin.classList.add("text-slate-500", "hover:text-slate-800");
+            document.querySelector("#show-login").classList.remove("active");
+            document.querySelector("#show-register").classList.add("active");
+        }
+
+        showLogin.onclick = switchToLogin;
+        showRegister.onclick = switchToRegister;
+
+        // Function to display a message to the user
+        function showMessage(elementId, msg, isSuccess) {
+            const el = document.getElementById(elementId);
+            el.textContent = msg;
+            el.style.display = "block";
+            el.style.transition = "background-color 0.5s ease, opacity 0.5s ease"; // Add a transition
+            if (isSuccess) {
+                el.style.backgroundColor = "#10b981"; // success
+                el.style.color = "white";
+            } else {
+                el.style.backgroundColor = "#ef4444"; // error
+                el.style.color = "white";
+            }
+        }
+
+        // Handle login form submission
+        document.getElementById("login-form-content").addEventListener("submit", async e => {
+            e.preventDefault();
+            const email = document.getElementById("login-email").value;
+            const password = document.getElementById("login-password").value;
+
+            showMessage("login-message", "Authenticating...", false);
+
+            if (users[email] && users[email].password === password) {
+                showMessage("login-message", "Login successful! Redirecting...", true);
+                setTimeout(() => { 
+                    const userRole = users[email].role;
+                    let redirectPage = 'lost_index.php'; // Default redirect page
+
+                    if (userRole === 'admin') {
+                        redirectPage = 'admin_home.php';
+                    }
+                    console.log(`User logged in with role: ${userRole}, redirecting to: ${redirectPage}`);
+                    window.location.href = redirectPage;
+                }, 1500);
+            } else {
+                showMessage("login-message", "Invalid email or password.", false);
+            }
+        });
+
+        // Handle register form submission
+        document.getElementById("register-form-content").addEventListener("submit", async e => {
+            e.preventDefault();
+            const email = document.getElementById("register-email").value;
+            const password = document.getElementById("register-password").value;
+            const role = document.getElementById("register-role").value;
+
+            showMessage("register-message", "Creating account...", false);
+            
+            if (users[email]) {
+                showMessage("register-message", "Account with this email already exists.", false);
+            } else if (!email || !password || !role) {
+                showMessage("register-message", "Please fill in all fields.", false);
+            } else {
+                users[email] = { password, role };
+                localStorage.setItem('simulated_users', JSON.stringify(users));
+                showMessage("register-message", "Registration successful! You can now sign in.", true);
+                setTimeout(switchToLogin, 2000);
+            }
+        });
+
+        // Simulates loading community stats
+        function loadStats() {
+            // This would normally fetch data from a real backend.
+            const userCount = Object.keys(users).length;
+            const statsEl = document.getElementById("stats");
+            statsEl.innerHTML = `
+                <div class="text-3xl font-bold text-gradient mb-2">${userCount}</div>
+                <div class="text-slate-600">Active Members</div>
+            `;
+        }
+        
+        // Run initial logic
+        loadStats();
+
+        // Canvas setup (acknowledging the user's prompt but not using it for the main UI)
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        // This is where you would add drawing logic for a game or animation if needed.
+        // For example: ctx.fillStyle = 'blue'; ctx.fillRect(10, 10, 150, 100);
+    </script>
+</body>
+</html>
