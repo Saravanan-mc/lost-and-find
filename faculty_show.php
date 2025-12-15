@@ -1,31 +1,12 @@
 <?php
-// Include the configuration file for shared functions and constants
+// faculty_show.php
 require_once 'config.php';
-include 'admin.php';
-// Ensure getMediaType function is defined.
-// This is a placeholder; in a real application, it would be in config.php or a dedicated utility file.
-if (!function_exists('getMediaType')) {
-    function getMediaType($filePath) {
-        $ext = pathinfo($filePath, PATHINFO_EXTENSION);
-        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        $videoExtensions = ['mp4', 'webm', 'ogg'];
 
-        if (in_array(strtolower($ext), $imageExtensions)) {
-            return 'image';
-        } elseif (in_array(strtolower($ext), $videoExtensions)) {
-            return 'video';
-        }
-        return 'unknown';
-    }
-}
-
-// Get the base path for navigation
 $basePath = getBasePath();
-// Get the URL path for uploaded media
 $uploadUrlPath = getUploadUrlPath();
 
 $file_path = getDataDirPath() . 'faculty_items.json';
-$top_posts_file_path = getDataDirPath() . 'top_posts.json'; // Path to top posts configuration
+$top_posts_file_path = getDataDirPath() . 'top_posts.json';
 
 $items = [];
 $currentTopPosts = [];
@@ -38,9 +19,6 @@ if (file_exists($top_posts_file_path)) {
         $currentTopPosts = [];
     }
 }
-
-// Get current page for active navigation link
-$currentPage = basename($_SERVER['PHP_SELF']);
 
 if (file_exists($file_path)) {
     $jsonContent = file_get_contents($file_path);
@@ -64,8 +42,7 @@ if (file_exists($file_path)) {
         $filteredItems = [];
 
         foreach ($items as $item) {
-            // Ensure 'id' key exists for comparison
-            if (isset($item['id']) && $item['id'] === $topPostId) {
+            if (($item['id'] ?? null) === $topPostId) {
                 $topItem = $item;
             } else {
                 $filteredItems[] = $item;
@@ -83,632 +60,40 @@ if (file_exists($file_path)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Items - Lost & Found Hub</title>
+    <title>Faculty Items</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #0066ff;
-            --primary-dark: #0052cc;
-            --primary-darker: #003d99;
-            --primary-light: #3385ff;
-            --primary-lighter: #66a3ff;
-            --primary-pale: #e6f2ff;
-
-            --secondary: #1e40af;
-            --accent: #0ea5e9;
-            --accent-light: #38bdf8;
-            --ocean: #0284c7;
-            --azure: #0369a1;
-
-            --cyan: #06b6d4;
-            --teal: #0d9488;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-
-            --text-primary: #0f172a;
-            --text-secondary: #334155;
-            --text-light: #64748b;
-            --text-muted: #94a3b8;
-
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-blue: #f0f9ff;
-            --bg-ocean: #ecfeff;
-            --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-
-            --border: #e2e8f0;
-            --border-blue: #bfdbfe;
-            --border-light: #f1f5f9;
-
-            --shadow-sm: 0 1px 2px 0 rgba(0, 102, 255, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 102, 255, 0.1), 0 2px 4px -1px rgba(0, 102, 255, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 102, 255, 0.1), 0 4px 6px -2px rgba(0, 102, 255, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 102, 255, 0.1), 0 10px 10px -5px rgba(0, 102, 255, 0.04);
-            --shadow-2xl: 0 25px 50px -12px rgba(0, 102, 255, 0.25);
-            --shadow-blue: 0 10px 25px -5px rgba(0, 102, 255, 0.2);
-
-            --gradient-primary: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
-            --gradient-ocean: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-            --gradient-sky: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            --gradient-hero: linear-gradient(135deg, #0066ff 0%, #0284c7 50%, #0ea5e9 100%);
-            --gradient-card: linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%);
-            --gradient-mesh: radial-gradient(at 40% 20%, #0066ff 0px, transparent 50%),
-                                 radial-gradient(at 80% 0%, #0ea5e9 0px, transparent 50%),
-                                 radial-gradient(at 0% 50%, #0284c7 0px, transparent 50%),
-                                 radial-gradient(at 80% 50%, #38bdf8 0px, transparent 50%),
-                                 radial-gradient(at 0% 100%, #0369a1 0px, transparent 50%);
-
-            --shine-gradient: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-            --wave-gradient: linear-gradient(45deg, rgba(0, 102, 255, 0.1), rgba(14, 165, 233, 0.1), rgba(0, 102, 255, 0.1));
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            line-height: 1.6;
-            color: var(--text-primary);
-            background: var(--gradient-hero);
-            min-height: 100vh;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            padding-top: 85px;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--gradient-mesh);
-            opacity: 0.03;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        .canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-        }
-
-        .navbar {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(25px) saturate(180%);
-            border-bottom: 1px solid var(--border-blue);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .navbar.scrolled {
-            background: rgba(255, 255, 255, 0.99);
-            box-shadow: var(--shadow-lg);
-            border-bottom-color: var(--primary-pale);
-        }
-
-        .nav-container {
-            margin: 0 auto;
-            padding: 0 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 85px;
-            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .navbar.scrolled .nav-container {
-            height: 75px;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 1.65rem;
-            font-weight: 900;
-            color: var(--primary);
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-        }
-
-        .logo:hover {
-            transform: scale(1.03);
-        }
-
-        .logo-icon {
-            width: 45px;
-            height: 45px;
-            background: var(--gradient-primary);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.3rem;
-            box-shadow: var(--shadow-blue);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .logo-icon::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: var(--shine-gradient);
-            transform: rotate(45deg);
-            animation: logoShine 3s ease-in-out infinite;
-        }
-
-        @keyframes logoShine {
-            0%, 100% {
-                transform: translateX(-100%) translateY(-100%) rotate(45deg);
-            }
-            50% {
-                transform: translateX(100%) translateY(100%) rotate(45deg);
-            }
-        }
-
-        .nav-menu {
-            display: flex;
-            list-style: none;
-            gap: 2.0rem;
-            align-items: center;
-        }
-
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 0.75rem 0;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .nav-link::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 3px;
-            background: var(--gradient-primary);
-            border-radius: 2px;
-            transform: translateX(-50%);
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .nav-link:hover,
-        .nav-link.active {
-            color: var(--primary);
-            transform: translateY(-1px);
-        }
-
-        .nav-link:hover::before,
-        .nav-link.active::before {
-            width: 100%;
-        }
-
-        .nav-link i {
-            font-size: 1rem;
-            transition: transform 0.3s ease;
-        }
-
-        .nav-link:hover i {
-            transform: scale(1.1);
-        }
-
-        .mobile-menu-btn {
-            display: none;
-            background: var(--gradient-primary);
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: var(--shadow-md);
-            position: relative;
-            overflow: hidden;
-            z-index: 1001;
-        }
-
-        .mobile-menu-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .mobile-menu-btn i {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 1.4rem;
-        }
-
-        .mobile-menu-btn .fa-times {
-            opacity: 0;
-            transform: translate(-50%, -50%) rotate(180deg);
-        }
-
-        .mobile-menu-btn.active .fa-bars {
-            opacity: 0;
-            transform: translate(-50%, -50%) rotate(-180deg);
-        }
-
-        .mobile-menu-btn.active .fa-times {
-            opacity: 1;
-            transform: translate(-50%, -50%) rotate(0deg);
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.99);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border-blue);
-            box-shadow: var(--shadow-lg);
-            border-radius: 1.5rem;
-            animation: fadeInScale 0.8s ease-out forwards;
-            position: relative;
-            z-index: 1;
-        }
-
-        @keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .section-divider {
-            position: relative;
-            margin: 2.5rem 0;
-            text-align: center;
-        }
-
-        .section-divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--border), transparent);
-            z-index: 1;
-        }
-
-        .section-divider span {
-            background: var(--bg-primary);
-            padding: 0 1.5rem;
-            color: var(--text-light);
-            font-weight: 600;
-            position: relative;
-            z-index: 2;
-            border-radius: 9999px;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .item-card {
-            background: var(--gradient-card);
-            border-radius: 1.25rem;
-            box-shadow: var(--shadow-md);
-            padding: 1.5rem;
-            transition: all 0.3s ease-in-out;
-            border: 1px solid var(--border-light);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100%;
-        }
-
-        .item-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--primary-light);
-        }
-
-        .item-card.top-post {
-            border-color: var(--success);
-            background-color: var(--bg-ocean); /* A light green-blue for top post */
-            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.2); /* Stronger shadow for top post */
-            position: relative;
-            overflow: hidden;
-        }
-
-        .item-card.top-post::before {
-            content: '\f005'; /* Font Awesome star icon */
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 2.5rem;
-            color: var(--warning); /* Gold color for star */
-            opacity: 0.8;
-            transform: rotate(-15deg);
-            z-index: 2;
-        }
-
-        .item-card h3 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .item-card .top-post-badge {
-            background: var(--success);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            margin-left: 0.75rem;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .item-card p {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-        }
-
-        .item-card p strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .item-card a {
-            color: var(--primary);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .item-card a:hover {
-            color: var(--primary-dark);
-            text-decoration: underline;
-        }
-
-        .item-card .contact-info {
-            margin-top: 1.5rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .item-card .contact-info h4 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .item-card .media-preview {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 0.75rem;
-            margin-bottom: 1rem;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-light);
-        }
-
-        .item-card video {
-            background-color: #000;
-        }
-
-      
-
-        @media (max-width: 992px) {
-            .nav-container {
-                flex-wrap: wrap;
-                height: auto;
-                padding: 1rem 1.5rem;
-            }
-            .navbar.scrolled .nav-container {
-                height: auto;
-            }
-            .nav-menu {
-                display: none;
-                flex-direction: column;
-                width: 100%;
-                text-align: center;
-                margin-top: 1rem;
-                gap: 0;
-                background: rgba(255, 255, 255, 0.98);
-                backdrop-filter: blur(25px);
-                border-top: 1px solid var(--border-blue);
-                padding: 1rem 0;
-                box-shadow: var(--shadow-md);
-                position: absolute;
-                top: 85px;
-                left: 0;
-                transform: translateY(-100%);
-                opacity: 0;
-                transition: transform 0.4s ease-out, opacity 0.4s ease-out;
-            }
-
-            .nav-menu.active {
-                display: flex;
-                transform: translateY(0);
-                opacity: 1;
-            }
-
-            .nav-link {
-                padding: 0.8rem 0;
-                justify-content: center;
-            }
-
-            .mobile-menu-btn {
-                display: flex;
-            }
-            body {
-                padding-top: 75px;
-            }
-            .hero-title {
-                font-size: clamp(2rem, 8vw, 4rem);
-            }
-            .hero-subtitle {
-                font-size: 1.2rem;
-            }
-            .hero-actions {
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-            .btn {
-                padding: 1rem 2rem;
-                font-size: 1rem;
-                width: 80%;
-                max-width: 300px;
-            }
-            .features {
-                padding: 80px 0;
-            }
-            .feature-card {
-                padding: 2rem;
-            }
-            .feature-icon {
-                width: 70px;
-                height: 70px;
-                font-size: 1.8rem;
-            }
-            .feature-title {
-                font-size: 1.5rem;
-            }
-            .feature-description {
-                font-size: 1rem;
-            }
-            .browse {
-                padding: 80px 0;
-            }
-            .browse-btn {
-                flex-direction: column;
-                text-align: center;
-                gap: 1rem;
-                padding: 2rem;
-                min-width: unset;
-                width: 80%;
-                max-width: 300px;
-            }
-            .browse-icon {
-                width: 55px;
-                height: 55px;
-                font-size: 1.5rem;
-            }
-            .browse-text .title {
-                font-size: 1.2rem;
-            }
-            .browse-text .subtitle {
-                font-size: 0.9rem;
-            }
-            .footer-content {
-                grid-template-columns: 1fr;
-                gap: 3rem;
-                text-align: center;
-            }
-            .footer-section h3::after {
-                left: 50%;
-                transform: translateX(-50%);
-            }
-            .back-to-top {
-                bottom: 1.5rem;
-                right: 1.5rem;
-                width: 50px;
-                height: 50px;
-                font-size: 1.4rem;
-            }
-        }
-
-        canvas {
-            display: block;
-        }
-
-
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; }
+        .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); padding: 24px; }
+        .nav-link { color: #3b82f6; text-decoration: none; padding: 8px 12px; border-radius: 8px; transition: background-color 0.3s ease; }
+        .nav-link:hover { background-color: #bfdbfe; }
+        .item-card { background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+        .item-card.top-post { border-color: #38a169; background-color: #ecfdf5; box-shadow: 0 4px 8px rgba(56, 161, 105, 0.2); }
     </style>
 </head>
-<body class="flex flex-col min-h-screen" id="ad">
-    <canvas id="particleCanvas" class="canvas-container"></canvas>
-
-    <header class="navbar" id="navbar">
-        <div class="nav-container">
-            <a href="<?php echo $basePath; ?>/index.php" class="logo">
-                <span class="logo-icon"><i class="fas fa-search-location"></i></span>
-                Lost & Found Hub
-            </a>
+<body class="flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Lost & Found Hub</h1>
             <nav>
-                <ul class="nav-menu" id="navMenu">
-                    <li><a href="<?php echo $basePath; ?>/admin_home.php" class="nav-link <?php echo ($currentPage == 'admin_home.php') ? 'active' : ''; ?>"><i class="fas fa-user-shield"></i> Admin Home</a></li>
-                    <li><a href="<?php echo $basePath; ?>/admin_manage_posts.php?type=lost" class="nav-link <?php echo ($currentPage == 'admin_manage_posts.php' && ($_GET['type'] ?? '') == 'lost') ? 'active' : ''; ?>"><i class="fas fa-box-open"></i> Manage Lost</a></li>
-                    <li><a href="<?php echo $basePath; ?>/admin_manage_posts.php?type=found" class="nav-link <?php echo ($currentPage == 'admin_manage_posts.php' && ($_GET['type'] ?? '') == 'found') ? 'active' : ''; ?>"><i class="fas fa-box"></i> Manage Found</a></li>
-                    <li><a href="<?php echo $basePath; ?>/faculty_post.php" class="nav-link <?php echo ($currentPage == 'faculty_post.php') ? 'active' : ''; ?>"><i class="fas fa-chalkboard-teacher"></i> Post Faculty Item</a></li>
-                    <li><a href="<?php echo $basePath; ?>/faculty_show.php" class="nav-link <?php echo ($currentPage == 'faculty_show.php') ? 'active' : ''; ?>"><i class="fas fa-eye"></i> View Faculty Items</a></li>
+                 <ul class="flex space-x-4">
+                    <li><a href="<?php echo $basePath; ?>/admin_home.php" class="nav-link text-white hover:bg-blue-700">Admin Home</a></li>
+                    <li><a href="<?php echo $basePath; ?>/admin_manage_posts.php?type=lost" class="nav-link text-white hover:bg-blue-700">Manage Lost</a></li>
+                    <li><a href="<?php echo $basePath; ?>/admin_manage_posts.php?type=found" class="nav-link text-white hover:bg-blue-700">Manage Found</a></li>
+                    <!-- No logout button needed as there's no login session -->
                 </ul>
             </nav>
-            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle mobile menu">
-                <i class="fas fa-bars"></i>
-                <i class="fas fa-times"></i>
-            </button>
         </div>
     </header>
 
-    <main class="flex-grow container max-w-4xl mx-auto my-8 px-6 relative z-10">
-        <div class="glass-card p-8 shadow-2xl">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-20 h-19">
-                    <i class="fa-solid fa-graduation-cap text-blue-600 text-4xl"></i>
-                </div>
-                <h2 class="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-3">Faculty Posted Items</h2>
-                <p class="text-gray-600 text-lg">Discover items posted by faculty members.</p>
-            </div>
+    <main class="flex-grow container mt-8">
+        <div class="card">
+            <h2 class="text-3xl font-bold text-indigo-700 mb-6">Faculty Posted Items</h2>
 
             <?php if (empty($items)): ?>
-                <div class="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl flex items-center justify-center gap-3">
-                    <i class="fas fa-info-circle text-2xl"></i>
-                    <p class="font-medium text-lg">No faculty items have been posted yet.</p>
-                </div>
+                <p class="text-gray-600">No faculty items have been posted yet.</p>
             <?php else: ?>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php
@@ -717,12 +102,12 @@ if (file_exists($file_path)) {
                         $isTopPost = (($item['id'] ?? null) === $topPostId);
                         $cardClass = $isTopPost ? 'item-card top-post' : 'item-card';
                     ?>
-                        <div class="<?php echo $cardClass; ?>">
+                        <div class="<?php echo $cardClass; ?> flex flex-col justify-between">
                             <div>
                                 <h3 class="text-xl font-semibold text-gray-800 mb-2">
                                     <?php echo htmlspecialchars($item['title'] ?? 'N/A'); ?>
                                     <?php if ($isTopPost): ?>
-                                        <span class="top-post-badge">TOP POST</span>
+                                        <span class="ml-2 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">TOP POST</span>
                                     <?php endif; ?>
                                 </h3>
                                 <p class="text-gray-700 text-sm mb-1"><strong>Type:</strong> <?php echo ucfirst(htmlspecialchars($item['item_type'] ?? 'N/A')); ?></p>
@@ -736,9 +121,9 @@ if (file_exists($file_path)) {
                                     ?>
                                     <div class="mb-4">
                                         <?php if ($mediaType === 'image'): ?>
-                                            <img src="<?php echo $mediaUrl; ?>" alt="Item Image" class="media-preview">
+                                            <img src="<?php echo $mediaUrl; ?>" alt="Item Image" class="w-full h-48 object-cover rounded-lg shadow-sm">
                                         <?php elseif ($mediaType === 'video'): ?>
-                                            <video controls class="media-preview">
+                                            <video controls class="w-full h-48 object-cover rounded-lg shadow-sm">
                                                 <source src="<?php echo $mediaUrl; ?>" type="<?php echo (strpos($item['media_path'], '.mp4') !== false) ? 'video/mp4' : ((strpos($item['media_path'], '.webm') !== false) ? 'video/webm' : 'video/ogg'); ?>">
                                                 Your browser does not support the video tag.
                                             </video>
@@ -749,7 +134,7 @@ if (file_exists($file_path)) {
                                 <?php endif; ?>
                             </div>
                             <div class="mt-4 pt-4 border-t border-gray-200">
-                                <h4 class="contact-info"> <i class="fa-solid fa-address-card mr-2 text-primary"></i> Contact Poster:</h4>
+                                <h4 class="text-lg font-semibold text-gray-700 mb-2">Contact Poster:</h4>
                                 <p class="text-gray-700 text-sm mb-1"><strong>Faculty ID:</strong> <?php echo htmlspecialchars($item['faculty_id'] ?? 'N/A'); ?></p>
                                 <p class="text-gray-700 text-sm mb-1"><strong>Name:</strong> <?php echo htmlspecialchars($item['poster_name'] ?? 'N/A'); ?></p>
                                 <p class="text-blue-700 text-sm mb-1"><strong>Email:</strong> <a href="mailto:<?php echo htmlspecialchars($item['email'] ?? ''); ?>" class="hover:underline"><?php echo htmlspecialchars($item['email'] ?? 'N/A'); ?></a></p>
@@ -765,95 +150,10 @@ if (file_exists($file_path)) {
         </div>
     </main>
 
-    <script>
-        window.addEventListener('scroll', function () {
-            const navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navMenu = document.getElementById('navMenu');
-
-        mobileMenuBtn.addEventListener('click', function () {
-            navMenu.classList.toggle('active');
-            mobileMenuBtn.classList.toggle('active');
-        });
-
-        const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        const numParticles = 100;
-        const particleSize = 1.5;
-        const particleSpeed = 0.5;
-
-        // Function to resize canvas and reinitialize particles
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            particles = []; // Clear existing particles
-            initParticles(); // Reinitialize particles for new size
-        }
-
-        // Function to initialize particles with random properties
-        function initParticles() {
-            for (let i = 0; i < numParticles; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: Math.random() * particleSize + 0.5,
-                    speedX: (Math.random() - 0.5) * 2 * particleSpeed,
-                    speedY: (Math.random() - 0.5) * 2 * particleSpeed,
-                    color: `rgba(255, 255, 255, ${Math.random() * 0.4 + 0.1})` // Random opacity for subtle effect
-                });
-            }
-        }
-
-        // Function to draw particles on the canvas
-        function drawParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas for redraw
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
-                ctx.fill();
-            }
-        }
-
-        // Function to update particle positions
-        function updateParticles() {
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                p.x += p.speedX;
-                p.y += p.speedY;
-
-                // Bounce off walls
-                if (p.x < 0 || p.x > canvas.width) {
-                    p.speedX *= -1;
-                }
-                if (p.y < 0 || p.y > canvas.height) {
-                    p.speedY *= -1;
-                }
-            }
-        }
-
-        // Animation loop
-        function animate() {
-            updateParticles();
-            drawParticles();
-            requestAnimationFrame(animate); // Request next animation frame
-        }
-
-        // Event listeners for canvas resizing and initial load
-        window.addEventListener('resize', resizeCanvas);
-        window.addEventListener('load', () => {
-            resizeCanvas(); // Set initial canvas size and particles
-            animate(); // Start the animation loop
-        });
-    </script>
+    <footer class="bg-gray-800 text-white p-4 mt-8 text-center shadow-inner">
+        <div class="container">
+            <p>&copy; <?php echo date("Y"); ?> Lost & Found Hub. All rights reserved.</p>
+        </div>
+    </footer>
 </body>
 </html>
